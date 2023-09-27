@@ -37,6 +37,8 @@ function collisions()
     bullet_collision();
     player_collision();
     player_falling();
+    check_enemy_collision();
+    check_player_enemy_collision();
 }
 
 function bullet_collision()
@@ -63,11 +65,47 @@ function player_collision()
 
     if ( x > WIDTH )
         player1.graphic.position.x -= x - WIDTH;
+    if ( x < 0 )
+        player1.graphic.position.x -= x;
     if ( y < 0 )
         player1.graphic.position.y -= y;
     if ( y > HEIGHT )
         player1.graphic.position.y -= y - HEIGHT;
+}
 
+function check_enemy_collision() {
+    if (!enemy1.life)
+        return;
+
+    for (var i = 0; i < player1.bullets.length; i++) {
+        var bullet = player1.bullets[i];
+        var bulletPosition = bullet.position;
+        var enemyPosition = enemy1.graphic.position;
+        var distance = bulletPosition.distanceTo(enemyPosition);
+
+        var collisionThreshold = 10;
+
+        if (distance < collisionThreshold) {
+            scene.remove(enemy1.graphic);
+            enemy1.life = 0;
+            
+            scene.remove(bullet);
+            player1.bullets.splice(i, 1);
+            i--;
+        }
+    }
+}
+
+function check_player_enemy_collision() {
+    var playerPosition = player1.graphic.position;
+    var enemyPosition = enemy1.graphic.position;
+    var distance = playerPosition.distanceTo(enemyPosition);
+
+    var collisionThreshold = 10;
+
+    if (distance < collisionThreshold && enemy1.life) {
+        player1.hitByEnemy();
+    }
 }
 
 function player_falling()
@@ -82,6 +120,8 @@ function player_falling()
 
     for (var i = 0; i < length; i++) {
         element = noGround[i];
+        if (!element)
+            continue;
 
         var tileX = (element[0]) | 0;
         var tileY = (element[1]) | 0;
@@ -93,7 +133,7 @@ function player_falling()
             && (y > tileY) 
             && (y < mtileY))
         {
-           player1.dead();
+           player1.hitByEnemy();
         }
     }
 
